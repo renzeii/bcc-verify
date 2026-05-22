@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>BCC Email Verification</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: sans-serif;
+      background: #f0f4f0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .card {
+      background: #fff;
+      max-width: 420px;
+      width: 100%;
+      border-radius: 20px;
+      padding: 40px 28px;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    .icon-circle {
+      width: 72px; height: 72px;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 34px;
+    }
+    h2 { margin-bottom: 10px; }
+    p { color: #555; font-size: 14px; line-height: 1.6; margin-bottom: 20px; }
+    .info-box {
+      background: #f0f7f0;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 13px;
+      color: #2D6A2D;
+    }
+    .spinner {
+      width: 40px; height: 40px;
+      border: 4px solid #e0e0e0;
+      border-top: 4px solid #2D6A2D;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 16px auto 0;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="card">
+
+    <!-- Loading -->
+    <div id="loading">
+      <div class="icon-circle" style="background:#2D6A2D;">🎓</div>
+      <h2 style="color:#2D6A2D;">Verifying your account...</h2>
+      <p>Please wait a moment.</p>
+      <div class="spinner"></div>
+    </div>
+
+    <!-- Success -->
+    <div id="success" class="hidden">
+      <div class="icon-circle" style="background:#2D6A2D;">✅</div>
+      <h2 style="color:#2D6A2D;">Email Verified!</h2>
+      <p>
+        Your <strong>BCC Freshmen Advance Learning</strong> account is now active.<br><br>
+        You can return to the app and log in.
+      </p>
+      <div class="info-box">
+        You may now close this page and open the BCC app.
+      </div>
+    </div>
+
+    <!-- Error -->
+    <div id="error" class="hidden">
+      <div class="icon-circle" style="background:#cc0000;">❌</div>
+      <h2 style="color:#cc0000;">Verification Failed</h2>
+      <p>
+        This link may have already been used or has expired.<br><br>
+        Please request a new verification email from the app.
+      </p>
+    </div>
+
+  </div>
+
+  <script>
+    async function verify() {
+      const hash = window.location.hash.substring(1);
+      const params = new URLSearchParams(hash);
+
+      const accessToken = params.get('access_token');
+      const type = params.get('type');
+
+      // If Supabase auto-verified and passed access_token, show success directly
+      if (accessToken && type === 'signup') {
+        showSuccess();
+        return;
+      }
+
+      // Try to get token_hash from query params (fallback)
+      const urlParams = new URLSearchParams(window.location.search);
+      const tokenHash = urlParams.get('token_hash') || urlParams.get('token');
+      const verifyType = urlParams.get('type') || 'signup';
+
+      if (!tokenHash) {
+        showError();
+        return;
+      }
+
+      // Call Supabase to verify
+      try {
+        const SUPABASE_URL = 'https://yyzblzahbjyqamcyazhn.supabase.co'; // <-- PALITAN ITO
+        const SUPABASE_ANON_KEY = 'sb_publishable_u8tye--4GfxEfhGWPlcbDA_2FHuHHWX'; // <-- PALITAN ITO
+
+        const res = await fetch(`${SUPABASE_URL}/auth/v1/verify`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_ANON_KEY
+          },
+          body: JSON.stringify({
+            token_hash: tokenHash,
+            type: verifyType
+          })
+        });
+
+        if (res.ok) {
+          showSuccess();
+        } else {
+          showError();
+        }
+      } catch (e) {
+        showError();
+      }
+    }
+
+    function showSuccess() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('success').classList.remove('hidden');
+    }
+
+    function showError() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('error').classList.remove('hidden');
+    }
+
+    verify();
+  </script>
+</body>
+</html>
